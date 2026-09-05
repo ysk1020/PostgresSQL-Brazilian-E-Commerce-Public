@@ -1,0 +1,40 @@
+# Data files (too large / not meant for version control)
+*.csv
+*.tsv
+*.json
+*.parquet
+data/
+raw_data/
+
+# Database dumps and local DB files
+*.sql.gz
+*.dump
+*.db
+*.sqlite3
+
+# Environment / credentials
+.env
+.env.local
+config.ini
+secrets.yml
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+*.egg-info/
+
+# Jupyter notebooks (checkpoints only — keep the actual .ipynb files)
+.ipynb_checkpoints/
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+
+# IDE/editor
+.vscode/
+.idea/
+*.swp
