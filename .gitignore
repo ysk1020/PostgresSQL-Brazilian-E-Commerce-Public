@@ -3,6 +3,7 @@
 *.tsv
 *.json
 *.parquet
+*.zip
 data/
 raw_data/
 
@@ -23,8 +24,8 @@ __pycache__/
 *.pyc
 *.pyo
 .venv/
-venv/
 env/
+venv/
 *.egg-info/
 
 # Jupyter notebooks (checkpoints only — keep the actual .ipynb files)
@@ -38,3 +39,5 @@ Thumbs.db
 .vscode/
 .idea/
 *.swp
+
+.claude/
