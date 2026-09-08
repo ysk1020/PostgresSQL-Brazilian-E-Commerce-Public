@@ -45,24 +45,3 @@ left join order_totals AS ot
     on o.order_id = ot.order_id
 group by buyer_type              -- collapse from one-row-per-person to one-row-per-bucket
 order by num_customers desc;     -- largest bucket first
-
-/*
-Secondly, we can analyze the revenue growing and if growth accelerating or decelerating over time.
-    Additionally we can analyze how much of revenue comes from feight(shiping) vs product prices, and is that ratio stable
-    Cumulative revenue from top 10% of customers (the Pareto question)
-    What it's asking: Sort all customers by how much they've spent in total. Take the top 10% of spenders. 
-    What percentage of total revenue do just those customers account for? 
-    This is the classic "80/20 rule" check — do a small number of customers disproportionately drive the business?
-*/
-
-
-/* 
-Thirdly, we can analyze the seller performance:
-    Which sellers are consistently top-ranked across multiple  months vs one hit wonders?
-    
-    Which product categories have the best revenue-per-order but the worst review scores — i.e., where's the quality/margin tension? 
-    (join order_items → products → translation → order_reviews, RANK by revenue and separately by avg review_score, compare)
-
-    Do sellers with faster shipping (order_delivered_customer_date - shipping_limit_date) get measurably better review scores? 
-    (this is a real correlation question, not just a window function — good for showing you go beyond mechanical technique practice)
-*/
