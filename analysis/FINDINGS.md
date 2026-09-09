@@ -36,30 +36,53 @@ Monthly revenue, cumulative total, and a 3-month rolling average were computed f
 
 ## Question 3 - Seller performance
 
-**Query:** [`sql/05_seller_performance_analysis.sql`](/sql/05_seller_performance_analysis.sql)
+**Query:** [`sql/05_seller_performance_analysis.sql`](../sql/05_seller_performance_analysis.sql)
+
+### Sub-question A: which sellers are consistently top-ranked vs. one-hit wonders?
+
+For each month, sellers were ranked against each other by revenue (`RANK() OVER (PARTITION BY order_month ORDER BY revenue DESC)`), then counted by how many separate months they landed in the top 5:
+
+| months_in_top_5 | num_sellers |
+|---|---|
+| 10 | 1 |
+| 9 | 1 |
+| 7 | 2 |
+| 6 | 2 |
+| 5 | 2 |
+| 4 | 1 |
+| 3 | 4 |
+| 2 | 7 |
+| 1 | 25 |
+
+**Takeaway:** across about 25 months of data, 45 different sellers made the top 5 at least once. But most of them (25 sellers, over half) only did it one time. That was a one-time spike, not steady performance. Only 8 sellers made the top 5 in 5 or more separate months, and one seller stands out clearly, making the top 5 in 10 different months. The best performance in this marketplace comes from a small group of steady sellers, not from many sellers spread evenly.
+
+*Open question, not yet checked:* whether these steady top sellers sell in specific product categories, or whether their consistency comes from something else, like pricing or how many items they list. The current query only looks at seller-level revenue, not product data. This is a guess for future work, not a confirmed finding.
+
+### Sub-question B: which categories have the best revenue-per-order but the worst review scores?
+
+Categories were ranked separately by average revenue-per-order and by average review score (worst first), then compared side by side:
+
+| product_category_name | avg_revenue_per_order | revenue_rank | avg_review_score | worst_review_rank |
+|---|---|---|---|---|
+| pcs | 1231.84 | 1 | 4.18 | 57 |
+| portateis_cozinha_e_preparadores_de_alimentos | 283.47 | 7 | 3.27 | 3 |
+| moveis_escritorio | 215.21 | 11 | 3.49 | 5 |
+| pc_gamer | 193.24 | 15 | 3.33 | 4 |
+
+(out of ~71 total categories)
+
+**Takeaway:** `pcs` has both high revenue and a good review score (rank 57 of 71, nowhere near the worst). No tension there. But **kitchen and food-prep appliances, office furniture, and gaming PCs** all combine solid to strong revenue per order with review scores among the worst 5 categories in the whole dataset. This is a real quality/margin tension worth noting.
+
+*Known caveat:* the review-score side of this join can double-count a review (a multi-item order's single review can be counted once per item), and this hasn't been fixed with a dedup step yet. The categories found are still real, large gaps, but the exact average scores may shift a little once that's fixed.
+
+### Sub-question C: does shipping speed relate to review scores?
+
+Orders were bucketed by how their delivery date compared to the seller's shipping deadline (`order_delivered_customer_date - shipping_limit_date`):
 
 | shipment_status | avg_review_score | num_orders |
 |---|---|---|
 | on time | 4.38 | 8,105 |
-| late | 4.07 | 71,701 |
 | early | 4.38 | 16,554 |
+| late | 4.07 | 71,701 |
 
-**74% of all orders show as "late."** That's suspicious enough to interpret carefully before writing it down: `shipping_limit_date` is the deadline for the *seller* to hand the package to the carrier — not the estimated delivery date to the customer. So `order_delivered_customer_date - shipping_limit_date` isn't really measuring "was the seller late," it's measuring "seller handoff deadline + however many days of carrier transit time across Brazil" — which will almost always be a large positive number, since delivery necessarily happens well after the shipping deadline, not around the same time. So "late" here doesn't mean "the seller missed their deadline" — it's largely just transit time being longer than half a day, which is expected for basically every order.
-
-**What the data does actually support, worth writing down:** despite that measurement quirk, there's still a real, modest pattern — `on time`/`early` orders average **4.38**, while `late` orders average **4.07** — about a third of a point lower on a 5-point scale. So faster fulfillment (relative to the seller's own deadline) is associated with meaningfully better reviews, even though most orders technically land in the "late" bucket by this specific measure.
-
-Suggested wording for `FINDINGS.md`:
-
-> **Sub-question C: does shipping speed relate to review scores?**
->
-> Orders were bucketed by how their delivery date compared to the seller's shipping deadline (`order_delivered_customer_date - shipping_limit_date`).
->
-> | shipment_status | avg_review_score | num_orders |
-> |---|---|---|
-> | on time | 4.38 | 8,105 |
-> | early | 4.38 | 16,554 |
-> | late | 4.07 | 71,701 |
->
-> **Caveat:** most orders (74%) fall into "late" by this measure — but `shipping_limit_date` is the seller's carrier-handoff deadline, not an estimated delivery date, so this largely reflects normal transit time rather than seller tardiness. Despite that, there's a real, moderate effect: orders that miss the seller's own deadline average 0.3 points lower in reviews (4.07 vs. 4.38) than those that don't — suggesting fulfillment speed does meaningfully relate to customer satisfaction, even accounting for the measurement quirk.
-
-Want me to write this into `analysis/FINDINGS.md` now, alongside the existing Question 3 entry (sub-questions A and B)?
+**Caveat:** most orders (74%) fall into "late" by this measure. But `shipping_limit_date` is the seller's deadline to hand the package to the carrier, not an estimated delivery date. So this mostly shows normal transit time, not the seller being slow. Even so, there's a real, moderate effect: orders that miss the seller's own deadline average 0.3 points lower in reviews (4.07 vs. 4.38) than those that don't. This suggests fulfillment speed does relate to customer satisfaction, even with the measurement quirk taken into account.
