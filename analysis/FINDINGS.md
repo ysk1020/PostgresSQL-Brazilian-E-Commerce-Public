@@ -36,4 +36,30 @@ Monthly revenue, cumulative total, and a 3-month rolling average were computed f
 
 ## Question 3 - Seller performance
 
-*Not yet started.*
+**Query:** [`sql/05_seller_performance_analysis.sql`](/sql/05_seller_performance_analysis.sql)
+
+| shipment_status | avg_review_score | num_orders |
+|---|---|---|
+| on time | 4.38 | 8,105 |
+| late | 4.07 | 71,701 |
+| early | 4.38 | 16,554 |
+
+**74% of all orders show as "late."** That's suspicious enough to interpret carefully before writing it down: `shipping_limit_date` is the deadline for the *seller* to hand the package to the carrier — not the estimated delivery date to the customer. So `order_delivered_customer_date - shipping_limit_date` isn't really measuring "was the seller late," it's measuring "seller handoff deadline + however many days of carrier transit time across Brazil" — which will almost always be a large positive number, since delivery necessarily happens well after the shipping deadline, not around the same time. So "late" here doesn't mean "the seller missed their deadline" — it's largely just transit time being longer than half a day, which is expected for basically every order.
+
+**What the data does actually support, worth writing down:** despite that measurement quirk, there's still a real, modest pattern — `on time`/`early` orders average **4.38**, while `late` orders average **4.07** — about a third of a point lower on a 5-point scale. So faster fulfillment (relative to the seller's own deadline) is associated with meaningfully better reviews, even though most orders technically land in the "late" bucket by this specific measure.
+
+Suggested wording for `FINDINGS.md`:
+
+> **Sub-question C: does shipping speed relate to review scores?**
+>
+> Orders were bucketed by how their delivery date compared to the seller's shipping deadline (`order_delivered_customer_date - shipping_limit_date`).
+>
+> | shipment_status | avg_review_score | num_orders |
+> |---|---|---|
+> | on time | 4.38 | 8,105 |
+> | early | 4.38 | 16,554 |
+> | late | 4.07 | 71,701 |
+>
+> **Caveat:** most orders (74%) fall into "late" by this measure — but `shipping_limit_date` is the seller's carrier-handoff deadline, not an estimated delivery date, so this largely reflects normal transit time rather than seller tardiness. Despite that, there's a real, moderate effect: orders that miss the seller's own deadline average 0.3 points lower in reviews (4.07 vs. 4.38) than those that don't — suggesting fulfillment speed does meaningfully relate to customer satisfaction, even accounting for the measurement quirk.
+
+Want me to write this into `analysis/FINDINGS.md` now, alongside the existing Question 3 entry (sub-questions A and B)?
